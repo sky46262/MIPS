@@ -4,7 +4,7 @@
 Register R[35];
 vector<char*> L;
 int Lock[35];
-const int N = 5;
+const int N = 20;
 int PatternHistory[1 << N];
 //sp 29 fp 30 ra 31 hi,lo 32,33 pc 34
 extern map<string, int> L_index;
@@ -347,6 +347,7 @@ int Pipeline::exec() {
 	lockID = false;
 	instruction = id_ex = NULL;
 	r1 = r2 = _r1 = _r2 = NULL;
+	for (int i = 0; i < 1 << N; i++) PatternHistory[i] = 2;
 	while (true) {
 		WB();
 		MEM();
