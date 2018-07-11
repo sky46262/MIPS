@@ -4,6 +4,8 @@
 Register R[35];
 vector<char*> L;
 int Lock[35];
+const int N = 5;
+int PatternHistory[1 << N];
 //sp 29 fp 30 ra 31 hi,lo 32,33 pc 34
 extern map<string, int> L_index;
 char *memory_start, *text_end, *data_end, *heap;
@@ -14,7 +16,9 @@ void initialize() {
 	memset(memory_start, 0, sizeof(char) * MEMORY_SIZE);
 	R[29] = MEMORY_SIZE; // sp;
 }
-
+void Delete() {
+	free(memory_start);
+}
 void Program(string filename) {
 	initialize();
 	char *now = memory_start;
@@ -406,6 +410,18 @@ bool Pipeline::IDlocked () {
 	}
 	return 0;
 }
+bool Pipeline::Predict(Branch* c) {
+	int pattern = PatternHistory[c->History & ((1 << N) - 1)];
+	return PatternHistory[pattern] >= 2;
+}
+void Pipeline::SaveHistory(Branch* c, bool z) {
+	int pattern = c->History & ((1 << N) - 1);
+	if (z) {
+		if (PatternHistory[pattern] < 3) PatternHistory[pattern]++;
+	}
+	else if (PatternHistory[pattern] > 0) PatternHistory[pattern]--;
+	c->History = (c->History << 1) + z;
+}
 void Pipeline::IF() {
 	if (Lock[34] || lockID) return;
 	if (R[34] + memory_start >= text_end) return;
@@ -456,7 +472,12 @@ void Pipeline::ID() {
 			if (c->isWithConst) x[1] = c->value2.y;
 			else x[1] = *(c->value2.x);
 		}
-		Lock[34]++;
+		if (isBranch = Predict(c)) {
+			other = R[34];
+			R[34] = L[c->label] - memory_start;
+		}
+		else other = L[c->label] - memory_start;
+		//Lock[34]++;
 		count = 2;
 		break;
 	}
@@ -467,7 +488,8 @@ void Pipeline::ID() {
 			x[0] = L[c->dest.label] - memory_start;
 		else x[0] = *(c->dest.address);
 		if (c->j_type == JALR || c->j_type == JAL) Lock[31]++;
-		Lock[34]++;
+		
+		R[34] = x[0];//Lock[34]++;
 		break;
 	}
 	case LOAD: {
@@ -673,15 +695,24 @@ void Pipeline::EX() {
 				break;
 			}
 		}
+		SaveHistory(c, z);
+		if (z != isBranch) {
+			instruction = id_ex = NULL;
+			count = 0;
+			R[34] = other;
+		}
+		/*
 		if (z) {
 			v1 = L[c->label] - memory_start;
 			r1 = &R[34];
 		}
 		else Lock[34]--;
+		*/
 		break;
 	}
 	case JUMP: {
 		Jump * c = (Jump*)id_ex;
+		/*
 		if (c->j_type == J || c->j_type == JR) {
 			r1 = &R[34];
 			v1 = x[0];
@@ -690,6 +721,9 @@ void Pipeline::EX() {
 				r1 = &R[34]; v1 = x[0];
 				r2 = &R[31]; v2 = c->nextPosition;
 		}
+		*/
+		if (c->j_type == JAL || c->j_type == JALR)
+			r1 = &R[31], v1 = c->nextPosition;
 		break;
 	}
 	case LOAD: {

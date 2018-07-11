@@ -7,6 +7,7 @@
 #define Register int
 
 void initialize();
+void Delete();
 void Program(string filename);
 void Data(string filename);
 
@@ -28,12 +29,17 @@ private:
 	//outside
 	int return_value;
 	bool lockID;
+	//predict
+	bool isBranch;
+	int other;
 	void IF();
 	void ID();
 	void EX();
 	void MEM();
 	void WB();
 	bool IDlocked();
+	bool Predict(Branch*);
+	void SaveHistory(Branch*, bool);
 public:
 	int exec();
 };

@@ -67,6 +67,7 @@ public:
 		Value() :x(NULL) {}
 	}value2;
 	bool isWithConst;
+	int History;
 	Branch(BRANCH_TYPE, uint, Register* = NULL, Register* = NULL, int = 0);
 	~Branch() {}
 };

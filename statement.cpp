@@ -14,6 +14,7 @@ Branch::Branch(BRANCH_TYPE ct, uint la, Register *src1, Register *src2, int x) :
 	if (src1 == NULL) return;
 	if (src2 == NULL) value2.y = x, isWithConst = 1;
 	else value2.x = src2, isWithConst = 0;
+	History = 0;
 }
 Jump::Jump(JUMP_TYPE ct, int pos, Register *src, uint la) : Statement(JUMP), j_type(ct), nextPosition(pos){
 	if (src == NULL) dest.label = la;
